@@ -1,0 +1,7 @@
+{
+    "cmd": "make",
+    "name": "irlib++",
+    "sh": true,
+    "cwd": "{PROJECT_PATH}/build",
+    "keymap": "ctrl-r"
+}
