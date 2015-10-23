@@ -21,28 +21,31 @@ class BlockExporter {
 public:
     std::string exportBlockStream(const IrLibPlus::BlockStream& blockStream)
     {
+        const std::string jsNamespace = "IrLib.View.Parser";
         std::stringstream blockContent;
         blockContent << "[";
         blockContent << "\n";
-        std::cout << "\n";
 
         for (auto const& block : blockStream) {
-
-            blockContent << "new Block("
+            blockContent << "new "
+                         << jsNamespace << "."
+                         << "Block("
+                         << jsNamespace << "."
                          << "BlockType." << BlockTypeUtility::string(block.type()) //<< static_cast<int>(block.type())
-                         << ","
+                         << ", "
                          << "\"" << block.content() << "\""
-                         << ","
+                         << ", "
                          << "{"
                          << "isSafe:" << (block.isSafe() ? "true" : "false")
-                         << ","
+                         << ", "
                          << "expressionType:"
+                         << jsNamespace << "."
                          << "ExpressionType." << ExpressionTypeUtility::string(block.expressionType()) //<< static_cast<int>(block.expressionType())
                          << "}"
                          << ")";
 
             if (&block != &blockStream.back()) {
-                blockContent << ",";
+                blockContent << ", ";
             }
 
             blockContent << "\n";
@@ -56,6 +59,7 @@ public:
 
     std::string exportBlockStreamToFilePath(const IrLibPlus::BlockStream& blockStream, std::string filePath)
     {
+        return "";
     }
 };
 }

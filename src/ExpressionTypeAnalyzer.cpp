@@ -5,6 +5,13 @@
 
 namespace IrLibPlus {
 
+void trimToFirstWord(std::string& expression) {
+    auto position = expression.find_first_of(" \t", 1);
+    if (position != std::string::npos) {
+        expression = expression.substr(0, position);
+    }
+}
+
 std::map<const std::string, ExpressionType> ExpressionTypeAnalyzer::keywords = {
     { "view", ExpressionType::VIEW },
     { "for", ExpressionType::REPEATING_START },
@@ -14,8 +21,10 @@ std::map<const std::string, ExpressionType> ExpressionTypeAnalyzer::keywords = {
     { "else", ExpressionType::ELSE },
 };
 
-ExpressionType ExpressionTypeAnalyzer::detectExpressionType(const std::string& expression)
+ExpressionType ExpressionTypeAnalyzer::detectExpressionType(std::string expression)
 {
+    trimToFirstWord(expression);
+
     if (ExpressionTypeAnalyzer::keywords.find(expression) != ExpressionTypeAnalyzer::keywords.end()) {
         return ExpressionTypeAnalyzer::keywords[expression];
     }

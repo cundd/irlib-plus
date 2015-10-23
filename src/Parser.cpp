@@ -63,9 +63,14 @@ void Parser::analyze(const TokenStream&& tokenStream)
         if (tokenLength >= 1) {
             char firstChar = token[0];
             char lastChar = token[tokenLength - 1];
+            bool trimToken = false;
 
             if (firstChar == BlockStart) {
                 blockStartCount++;
+                trimToken = true;
+            } else if (firstChar == BlockEnd) {
+                //blockStartCount--;
+                trimToken = true;
             }
             if (tokenLength > 1
                 && token[1] == ExpressionChar
@@ -74,9 +79,17 @@ void Parser::analyze(const TokenStream&& tokenStream)
                 && blockStartCount == 1) {
                 expressionType = expressionTypeAnalyzer.detectExpressionType(token.substr(2, tokenLength - 4));
                 blockType = BlockType::EXPRESSION;
+                trimToken = true;
             }
 
-            currentBlockContent.append(token);
+            //std::cout << "trim? " << trimToken << " " << token << std::endl;
+            if (trimToken && tokenLength <= 2) {
+                //currentBlockContent.append("");
+            } else if (trimToken) {
+                currentBlockContent.append(token.substr(1, tokenLength - 2));
+            } else {
+                currentBlockContent.append(token);
+            }
 
             if (blockStartCount == BlockDelimiterRepeatNoSafe) {
                 blockType = BlockType::VARIABLE;
@@ -115,7 +128,6 @@ void Parser::analyze(const TokenStream&& tokenStream)
 
             if (blockStartCount <= 0) {
                 auto currentBlock = Block(currentBlockContent, blockType, expressionType, isSafe);
-                //Block currentBlock = { currentBlockContent, blockType, expressionType, isSafe };
 
                 currentBlockContent = "";
                 isSafe = false;
