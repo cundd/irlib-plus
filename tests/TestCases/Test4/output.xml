@@ -1,6 +1,1 @@
-<section>
-	<div class='e'>
-		{{time}} {%if time %}Time {%endif%}
-		{%	view date %}
-	</div>
-</section>
+<section> <div class='e'> Time </div></section>

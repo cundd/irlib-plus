@@ -1,6 +1,5 @@
 <section>
 	<div class='e'>
-		{{time}} {%if time %}Time {%endif%}
-		{%	view date %}
+		{%if time %}Time {%endif%}
 	</div>
 </section>

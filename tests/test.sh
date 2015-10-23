@@ -48,7 +48,7 @@ function performTestCase {
     if [[ -z ${1+x} ]]; then echo "Missing argument 1"; return; fi;
 
     TEST_CASE_PATH=$1;
-    TEST_CASE_NAME=`basename $TEST_CASE_PATH`;
+    TEST_CASE_NAME=`basename "$TEST_CASE_PATH"`;
     INPUT_FILE="$TEST_CASE_PATH/input.xml";
     EXPECTED_OUTPUT_FILE="$TEST_CASE_PATH/output.xml";
     VARIABLES_FILE="$TEST_CASE_PATH/variables.js";
@@ -71,13 +71,9 @@ function performTestCase {
     echo "var IrLib = require('$RESOURCE_DIR/irlib.js');" >> "$TEMP_DIR/run.js";
 
     ## Generate Script: Let irlib-plus generate the blocks
-    OUTPUT=`cat $INPUT_FILE | ../build/bin/irlib-plus`;
+    OUTPUT=`cat "$INPUT_FILE" | ../build/bin/irlib-plus`;
     echo "var templateBlocks = " >> "$TEMP_DIR/run.js";
     echo $OUTPUT >> "$TEMP_DIR/run.js";
-
-    # echo "console.log(variables);" >> "$TEMP_DIR/run.js";
-    # cat "$TEMP_DIR/run.js";
-    # $NODE "$TEMP_DIR/run.js";
 
     ## Generate Script: Create the view and render it
     echo "var view = new (IrLib.View.Template.extend({_templateBlocks: templateBlocks}))();" >> "$TEMP_DIR/run.js";
