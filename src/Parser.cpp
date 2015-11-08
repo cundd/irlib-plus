@@ -1,15 +1,17 @@
+#include "Prefix.h"
 #include "Parser.hpp"
 #include "ExpressionTypeAnalyzer.hpp"
 #include <iostream>
 
-namespace IrLibPlus {
+namespace IrLibPlus
+{
 const std::string Parser::ExpressionStart = "{%";
 const std::string Parser::ExpressionEnd = "%}";
 
-namespace {
+namespace
+{
     bool getTermSupportsColor()
     {
-
         auto termRaw = std::getenv("TERM");
         if (termRaw == nullptr) {
             return false;
@@ -22,25 +24,52 @@ namespace {
     };
 
     template <typename T>
-    void print(T&& message, std::string color = "7;33m")
+    void print(T&& message, std::string color, bool addLineBreak = false)
     {
+#if DEBUG
         const auto colorSupport = getTermSupportsColor();
         if (colorSupport) {
-            std::cout << " \033[" << color;
+            std::cout << "\033[" << color;
         }
         std::cout << message;
         if (colorSupport) {
             std::cout << "\033[0;m";
         }
-        std::cout << std::endl;
+        if (addLineBreak) {
+            std::cout << std::endl;
+        }
+#endif
+    }
+
+    template <typename T> void print(T&& message, bool addLineBreak = false)
+    {
+        print(std::forward<T>(message), "7;33m", addLineBreak);
     }
 }
 
+
+Block Parser::pushBlock(std::string content,
+                        BlockType type,
+                        ExpressionType expressionType,
+                        bool isSafe,
+                        int line)
+{
+    auto currentBlock = Block(content, type, expressionType, isSafe);
+
+    blocks.push_back(currentBlock);
+    if (line > 0) {
+        print("(add block @", false);
+        print(line, false);
+        print(")");
+    }
+    return currentBlock;
+}
+
+/**
+ * Analyze and categorize expressions
+ */
 void Parser::analyze(const TokenStream&& tokenStream)
 {
-    /**
-	 * Analyze and categorize expressions
-	 */
     ExpressionTypeAnalyzer expressionTypeAnalyzer;
 
     int size = tokenStream.size();
@@ -69,72 +98,85 @@ void Parser::analyze(const TokenStream&& tokenStream)
                 blockStartCount++;
                 trimToken = true;
             } else if (firstChar == BlockEnd) {
-                //blockStartCount--;
+                // if (tokenLength == 1) {
+                //     blockStartCount--;
+                // }
                 trimToken = true;
             }
-            if (tokenLength > 1
-                && token[1] == ExpressionChar
+
+            if (tokenLength > 1 && token[1] == ExpressionChar
                 && token[tokenLength - 2] == ExpressionChar
                 && token[tokenLength - 1] == BlockEnd
                 && blockStartCount == 1) {
-                expressionType = expressionTypeAnalyzer.detectExpressionType(token.substr(2, tokenLength - 4));
+                expressionType = expressionTypeAnalyzer.detectExpressionType(
+                    token.substr(2, tokenLength - 4));
                 blockType = BlockType::EXPRESSION;
                 trimToken = true;
             }
 
-            //std::cout << "trim? " << trimToken << " " << token << std::endl;
+            if (blockStartCount == 0) {
+                trimToken = false;
+            }
+
+            if (blockStartCount == BlockDelimiterRepeatNoSafe) {
+                blockType = BlockType::VARIABLE;
+            } else if (blockStartCount == BlockDelimiterRepeatSafe) {
+                blockType = BlockType::VARIABLE;
+                isSafe = true;
+            } else if (blockStartCount > BlockDelimiterRepeatSafe) {
+                blockStartCount--;
+                pushBlock(std::string(1, BlockStart),
+                          BlockType::STATIC,
+                          ExpressionType::UNKNOWN,
+                          false,
+                          __LINE__);
+                //                continue;
+            }
+
+            print("token: ");
+            print(token);
+            print(" bsc: ");
+            print(blockStartCount);
+            print("\n");
             if (trimToken && tokenLength <= 2) {
-                //currentBlockContent.append("");
+                // Skip this
+                // currentBlockContent.append("");
             } else if (trimToken) {
                 currentBlockContent.append(token.substr(1, tokenLength - 2));
             } else {
                 currentBlockContent.append(token);
             }
 
-            if (blockStartCount == BlockDelimiterRepeatNoSafe) {
-                blockType = BlockType::VARIABLE;
-            }
-            if (blockStartCount == BlockDelimiterRepeatSafe) {
-                blockType = BlockType::VARIABLE;
-                isSafe = true;
-            }
-
             if (lastChar == BlockEnd) {
                 blockStartCount--;
             }
+            print(" after: ");
+            print(blockStartCount);
+            print("\n");
 
-            // if (token[0] == BlockStart
-            //     && nextToken.length() > 0 && nextToken[0] == BlockStart) {
-            //     std::cout << "BlockStart ";
-            // }
+            if (blockStartCount < 0) {
+                // pushBlock(
+                //     // std::to_string(blockStartCount),
+                //     std::string(1, BlockEnd),
+                //     BlockType::STATIC,
+                //     ExpressionType::UNKNOWN,
+                //     false,
+                //     __LINE__);
 
-            //            std::cout << "blockStartCount: " << blockStartCount;
-            //            std::cout << std::setw(6);
-            //            std::cout << "BT: " << static_cast<int>(blockType) << " ";
-            //
-            //            if (blockStartCount <= 0 && isSafe) {
-            //                std::cout << std::setw(5);
-            //                std::cout << ">sn";
-            //            }
-            //            else if (blockStartCount <= 0) {
-            //                std::cout << std::setw(5);
-            //                std::cout << "> n";
-            //            }
-            //            else {
-            //                std::cout << std::setw(5) << " ";
-            //            }
-            //
-            //            print(currentBlockContent);
-
-            if (blockStartCount <= 0) {
-                auto currentBlock = Block(currentBlockContent, blockType, expressionType, isSafe);
+                // Reset the block start count
+                blockStartCount = 0;
+                continue;
+            } else if (blockStartCount == 0) {
+                pushBlock(currentBlockContent,
+                          blockType,
+                          expressionType,
+                          isSafe,
+                          __LINE__);
 
                 currentBlockContent = "";
                 isSafe = false;
                 blockType = BlockType::STATIC;
                 expressionType = ExpressionType::UNKNOWN;
-
-                blocks.push_back(currentBlock);
             }
         }
     }

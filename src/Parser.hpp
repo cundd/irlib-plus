@@ -7,9 +7,10 @@
 #import "Tokenizer.hpp"
 #import "ParserException.hpp"
 
-namespace IrLibPlus {
-
-class Parser {
+namespace IrLibPlus
+{
+class Parser
+{
     /**
      * List of blocks
      */
@@ -26,6 +27,12 @@ class Parser {
     bool strict = false;
 
     void analyze(const TokenStream&& tokenStream);
+
+    Block pushBlock(std::string content,
+                    BlockType type,
+                    ExpressionType expressionType,
+                    bool isSafe,
+                    int line = 0);
 
 public:
     /**
@@ -64,12 +71,14 @@ public:
     static constexpr char ExpressionChar = '%';
 
     /**
-     * Number the block start and end characters have to occur to build an un-safe block
+     * Number the block start and end characters have to occur to build an
+     * un-safe block
      */
     static constexpr int BlockDelimiterRepeatNoSafe = 2;
 
     /**
-     * Number the block start and end characters have to occur to build an safe block
+     * Number the block start and end characters have to occur to build an safe
+     * block
      */
     static constexpr int BlockDelimiterRepeatSafe = 3;
 

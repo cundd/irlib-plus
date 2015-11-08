@@ -4,10 +4,9 @@
 #include "Tokenizer.hpp"
 #include "Parser.hpp"
 
-namespace IrLibPlus {
-
-template <typename T>
-class TD;
+namespace IrLibPlus
+{
+template <typename T> class TD;
 
 TokenStream Tokenizer::tokenize(const std::string& input)
 {

@@ -44,41 +44,47 @@ function tearDown {
     rm -r "$TEMP_DIR";
 }
 
+function _buildJavaScript {
+    local VARIABLES_FILE=$1;
+    local RESOURCE_DIR=$2;
+    local INPUT_FILE=$3;
+
+    ## Generate Script
+    echo "";
+
+    ## Generate Script: Load variables file if it is defined
+    if [[ -f "$VARIABLES_FILE" ]]; then
+        echo "var variables = require('$VARIABLES_FILE').variables;";
+    else
+        echo "var variables = {}";
+    fi
+
+    ## Generate Script: Load IrLib library
+    echo "var IrLib = require('$RESOURCE_DIR/irlib.js');";
+
+    ## Generate Script: Let irlib-plus generate the blocks
+    echo "var templateBlocks = ";
+    cat "$INPUT_FILE" | ../build/bin/irlib-plus;
+
+    ## Generate Script: Create the view and render it
+    echo "var view = new (IrLib.View.Template.extend({_templateBlocks: templateBlocks}))();";
+    echo "view.setVariables(variables);";
+    echo "console.log('' + view + '');";
+}
+
 function performTestCase {
     if [[ -z ${1+x} ]]; then echo "Missing argument 1"; return; fi;
 
-    TEST_CASE_PATH=$1;
-    TEST_CASE_NAME=`basename "$TEST_CASE_PATH"`;
-    INPUT_FILE="$TEST_CASE_PATH/input.xml";
-    EXPECTED_OUTPUT_FILE="$TEST_CASE_PATH/output.xml";
-    VARIABLES_FILE="$TEST_CASE_PATH/variables.js";
+    local TEST_CASE_PATH=$1;
+    local TEST_CASE_NAME=`basename "$TEST_CASE_PATH"`;
+    local INPUT_FILE="$TEST_CASE_PATH/input.xml";
+    local EXPECTED_OUTPUT_FILE="$TEST_CASE_PATH/output.xml";
+    local VARIABLES_FILE="$TEST_CASE_PATH/variables.js";
 
     let TEST_COUNT+=1;
 
     printf "Running case $TEST_CASE_NAME: ";
-
-    ## Generate Script
-    echo "" > "$TEMP_DIR/run.js";
-
-    ## Generate Script: Load variables file if it is defined
-    if [[ -f "$VARIABLES_FILE" ]]; then
-        echo "var variables = require('$VARIABLES_FILE').variables;" >> "$TEMP_DIR/run.js";
-    else
-        echo "var variables = {}" >> "$TEMP_DIR/run.js";
-    fi
-
-    ## Generate Script: Load IrLib library
-    echo "var IrLib = require('$RESOURCE_DIR/irlib.js');" >> "$TEMP_DIR/run.js";
-
-    ## Generate Script: Let irlib-plus generate the blocks
-    OUTPUT=`cat "$INPUT_FILE" | ../build/bin/irlib-plus`;
-    echo "var templateBlocks = " >> "$TEMP_DIR/run.js";
-    echo $OUTPUT >> "$TEMP_DIR/run.js";
-
-    ## Generate Script: Create the view and render it
-    echo "var view = new (IrLib.View.Template.extend({_templateBlocks: templateBlocks}))();" >> "$TEMP_DIR/run.js";
-    echo "view.setVariables(variables);" >> "$TEMP_DIR/run.js";
-    echo "console.log('' + view + '');" >> "$TEMP_DIR/run.js";
+    _buildJavaScript "$VARIABLES_FILE" "$RESOURCE_DIR" "$INPUT_FILE" > "$TEMP_DIR/run.js";
 
     ## Run the generated script
     NODE_OUTPUT=`$NODE "$TEMP_DIR/run.js"`;

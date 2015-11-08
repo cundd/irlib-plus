@@ -11,13 +11,15 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <iomanip>
 #include "Block.hpp"
 
-namespace IrLibPlus {
-
-class BlockExporter {
+namespace IrLibPlus
+{
+class BlockExporter
+{
 public:
     std::string exportBlockStream(const IrLibPlus::BlockStream& blockStream)
     {
@@ -27,22 +29,25 @@ public:
         blockContent << "\n";
 
         for (auto const& block : blockStream) {
-            blockContent << "new "
-                         << jsNamespace << "."
-                         << "Block("
-                         << jsNamespace << "."
-                         << "BlockType." << BlockTypeUtility::string(block.type()) //<< static_cast<int>(block.type())
-                         << ", "
-                         << "\"" << block.content() << "\""
-                         << ", "
-                         << "{"
-                         << "isSafe:" << (block.isSafe() ? "true" : "false")
-                         << ", "
-                         << "expressionType:"
-                         << jsNamespace << "."
-                         << "ExpressionType." << ExpressionTypeUtility::string(block.expressionType()) //<< static_cast<int>(block.expressionType())
-                         << "}"
-                         << ")";
+            blockContent
+                << "new " << jsNamespace << "."
+                << "Block(" << jsNamespace << "."
+                << "BlockType."
+                << BlockTypeUtility::string(
+                       block.type()) //<< static_cast<int>(block.type())
+                << ", "
+                << "\"" << block.content() << "\""
+                << ", "
+                << "{"
+                << "isSafe:" << (block.isSafe() ? "true" : "false") << ", "
+                << "expressionType:" << jsNamespace << "."
+                << "ExpressionType."
+                << ExpressionTypeUtility::string(
+                       block
+                           .expressionType()) //<<
+                                              //static_cast<int>(block.expressionType())
+                << "}"
+                << ")";
 
             if (&block != &blockStream.back()) {
                 blockContent << ", ";
@@ -57,9 +62,24 @@ public:
         return blockContent.str();
     }
 
-    std::string exportBlockStreamToFilePath(const IrLibPlus::BlockStream& blockStream, std::string filePath)
+    bool exportBlockStreamToFilePath(const IrLibPlus::BlockStream& blockStream,
+                                     std::string& filePath)
     {
-        return "";
+        std::ofstream outputFile;
+        outputFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+        try {
+            outputFile.open(filePath);
+            outputFile << exportBlockStream(blockStream);
+        } catch (std::ofstream::failure& writeError) {
+            std::cerr << "Error while writing to output file: "
+                      //   << writeError.what()
+                      //   << "\n"
+                      << strerror(errno) << std::endl;
+            return false;
+        }
+
+        return true;
     }
 };
 }

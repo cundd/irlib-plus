@@ -8,15 +8,21 @@ int main(int argc, char** argv)
 {
     IrLibPlus::Parser parser{};
     IrLibPlus::BlockExporter exporter;
-    IrLibPlus::CliInputHelper cliInputHelper;
+    IrLibPlus::CliInputHelper cliInputHelper(
+        argc, std::vector<std::string>(argv, argv + argc));
 
-    // if (argc < 2) {
-    //
-    //     std::cerr << "Missing input" << std::endl;
-    //     return 1;
-    // }
-    std::string input = cliInputHelper.getInput(argc, argv);
-    std::cout << exporter.exportBlockStream(parser.parse(input));
+    std::string input = cliInputHelper.getInput();
+    if (input.size() < 1) {
+        std::cout << cliInputHelper.getHelp();
+        return 0;
+    }
+
+    std::string outputPath = cliInputHelper.getOutputFilePath();
+    if (outputPath.size()) {
+        exporter.exportBlockStreamToFilePath(parser.parse(input), outputPath);
+    } else {
+        std::cout << exporter.exportBlockStream(parser.parse(input));
+    }
 
     return 0;
 }
